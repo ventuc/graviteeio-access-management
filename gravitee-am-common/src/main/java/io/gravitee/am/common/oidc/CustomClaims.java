@@ -33,6 +33,10 @@ public interface CustomClaims {
      * End-User's roles.
      */
     String ROLES = "roles";
+    /**
+     * End-User's roles.
+     */
+    String PERMISSIONS = "permissions";
 
     static List<String> claims() {
         return Arrays.asList(GROUPS, ROLES);

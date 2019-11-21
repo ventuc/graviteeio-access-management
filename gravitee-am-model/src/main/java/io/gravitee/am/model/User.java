@@ -197,7 +197,13 @@ public class User {
     }
 
     public String getDisplayName() {
-        return displayName;
+        if (displayName != null) {
+            return displayName;
+        }
+        if (firstName != null) {
+            return firstName + ((lastName != null) ? " " + lastName : "");
+        }
+        return username;
     }
 
     public void setDisplayName(String displayName) {

@@ -76,6 +76,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .flatMapSingle(user -> {
                     UpdateUser updateUser = new UpdateUser();
                     updateUser.setSource(details.get(SOURCE));
+                    updateUser.setClient(CLIENT_ID);
                     updateUser.setLoggedAt(new Date());
                     updateUser.setLoginsCount(user.getLoginsCount() + 1);
                     updateUser.setAdditionalInformation(principal.getAdditionalInformation());
@@ -95,6 +96,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                     }
                     return Single.error(ex);
                 })
+                .flatMap(userService::enhance)
                 .doOnSuccess(user -> auditService.report(AuditBuilder.builder(AuthenticationAuditBuilder.class).principal(authentication).domain(domain.getId()).client(CLIENT_ID).user(user)))
                 .blockingGet();
     }

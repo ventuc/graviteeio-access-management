@@ -16,8 +16,12 @@
 package io.gravitee.am.management.handlers.management.api.resources;
 
 import io.gravitee.am.identityprovider.api.User;
+import io.gravitee.am.management.handlers.management.api.security.Permission;
+import io.gravitee.am.management.handlers.management.api.security.Permissions;
 import io.gravitee.am.management.service.AuditReporterManager;
 import io.gravitee.am.model.Domain;
+import io.gravitee.am.model.permissions.RolePermission;
+import io.gravitee.am.model.permissions.RolePermissionAction;
 import io.gravitee.am.service.DomainService;
 import io.gravitee.am.service.exception.DomainNotFoundException;
 import io.gravitee.am.service.model.PatchDomain;
@@ -60,6 +64,9 @@ public class DomainResource extends AbstractResource {
     @ApiResponses({
             @ApiResponse(code = 200, message = "Domain", response = Domain.class),
             @ApiResponse(code = 500, message = "Internal server error")})
+    @Permissions({
+            @Permission(value = RolePermission.DOMAIN_SETTINGS, acls = RolePermissionAction.READ)
+    })
     public void get(@PathParam("domain") String domainId, @Suspended final AsyncResponse response) {
         domainService.findById(domainId)
                 .switchIfEmpty(Maybe.error(new DomainNotFoundException(domainId)))
@@ -68,7 +75,6 @@ public class DomainResource extends AbstractResource {
                         result -> response.resume(result),
                         error -> response.resume(error));
     }
-
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
@@ -193,5 +199,10 @@ public class DomainResource extends AbstractResource {
     @Path("policies")
     public PoliciesResource getPoliciesResource() {
         return resourceContext.getResource(PoliciesResource.class);
+    }
+
+    @Path("members")
+    public MembersResource getMembersResource() {
+        return resourceContext.getResource(MembersResource.class);
     }
 }

@@ -44,6 +44,8 @@ public interface RoleService {
 
     Completable delete(String roleId, User principal);
 
+    Completable createOrUpdateSystemRoles();
+
     default Single<Role> create(String domain, NewRole role) {
         return create(domain, role, null);
     }

@@ -136,6 +136,17 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    public Single<List<Group>> findByIdIn(List<String> ids) {
+        LOGGER.debug("Find groups for ids : {}", ids);
+        return groupRepository.findByIdIn(ids)
+                .onErrorResumeNext(ex -> {
+                    LOGGER.error("An error occurs while trying to find a group using ids", ids, ex);
+                    return Single.error(new TechnicalManagementException(
+                            String.format("An error occurs while trying to find a group using ids: %s", ids), ex));
+                });
+    }
+
+    @Override
     public Single<Group> create(String domain, NewGroup newGroup, io.gravitee.am.identityprovider.api.User principal) {
         LOGGER.debug("Create a new group {} for domain {}", newGroup.getName(), domain);
 
@@ -229,7 +240,7 @@ public class GroupServiceImpl implements GroupService {
                     }
                     LOGGER.error("An error occurs while trying to delete group: {}", groupId, ex);
                     return Completable.error(new TechnicalManagementException(
-                            String.format("An error occurs while trying to delete user: %s", groupId), ex));
+                            String.format("An error occurs while trying to delete group: %s", groupId), ex));
                 });
     }
 

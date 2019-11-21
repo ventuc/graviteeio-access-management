@@ -16,7 +16,8 @@
 package io.gravitee.am.management.handlers.management.api.resources;
 
 import io.gravitee.am.identityprovider.api.User;
-import io.gravitee.am.model.Role;
+import io.gravitee.am.management.handlers.management.api.model.RoleEntity;
+import io.gravitee.am.model.permissions.RoleScope;
 import io.gravitee.am.service.DomainService;
 import io.gravitee.am.service.RoleService;
 import io.gravitee.am.service.exception.DomainNotFoundException;
@@ -56,17 +57,25 @@ public class RolesResource extends AbstractResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "List registered rogles for a security domain")
+    @ApiOperation(value = "List registered roles for a security domain")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "List registered roles for a security domain", response = Role.class, responseContainer = "Set"),
+            @ApiResponse(code = 200, message = "List registered roles for a security domain", response = RoleEntity.class, responseContainer = "Set"),
             @ApiResponse(code = 500, message = "Internal server error")})
     public void list(@PathParam("domain") String domain,
+                     @QueryParam("scope") RoleScope scope,
                      @Suspended final AsyncResponse response) {
         domainService.findById(domain)
                 .switchIfEmpty(Maybe.error(new DomainNotFoundException(domain)))
-                .flatMapSingle(irrelevant -> roleService.findByDomain(domain)
+                .flatMapSingle(domain1 -> roleService.findByDomain(domain)
                         .map(roles -> {
-                            List<Role> sortedRoles = roles.stream()
+                            List<RoleEntity> sortedRoles = roles.stream()
+                                    .filter(role -> {
+                                        if (scope == null) {
+                                            return true;
+                                        }
+                                        return role.getScope() != null && scope.getId() == role.getScope();
+                                    })
+                                    .map(RoleEntity::new)
                                     .sorted((o1, o2) -> String.CASE_INSENSITIVE_ORDER.compare(o1.getName(), o2.getName()))
                                     .collect(Collectors.toList());
                             return Response.ok(sortedRoles).build();

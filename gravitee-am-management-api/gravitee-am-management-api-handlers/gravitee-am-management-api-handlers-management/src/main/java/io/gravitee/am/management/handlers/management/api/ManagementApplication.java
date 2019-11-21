@@ -60,6 +60,7 @@ public class ManagementApplication extends ResourceConfig {
         register(JsonMappingExceptionMapper.class);
 
         register(UriBuilderRequestFilter.class);
+        register(PermissionsFilter.class);
         register(ByteArrayOutputStreamWriter.class);
         register(JacksonJaxbJsonProvider.class);
 

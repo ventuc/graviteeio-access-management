@@ -20,6 +20,7 @@ import {DialogService} from "../../../../../services/dialog.service";
 import {UserService} from "../../../../../services/user.service";
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from "@angular/material";
 import {RoleService} from "../../../../../services/role.service";
+import {AppConfig} from "../../../../../../config/app.config";
 
 @Component({
   selector: 'app-user-roles',
@@ -41,6 +42,9 @@ export class UserRolesComponent implements OnInit {
 
   ngOnInit() {
     this.domainId = this.route.snapshot.parent.parent.parent.params['domainId'];
+    if (this.router.routerState.snapshot.url.startsWith('/settings')) {
+      this.domainId = AppConfig.settings.authentication.domainId;
+    }
     this.user = this.route.snapshot.parent.data['user'];
     this.userRoles = this.route.snapshot.data['roles'];
   }

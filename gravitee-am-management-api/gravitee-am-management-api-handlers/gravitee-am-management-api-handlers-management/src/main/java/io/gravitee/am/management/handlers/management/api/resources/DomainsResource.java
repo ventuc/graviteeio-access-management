@@ -16,10 +16,19 @@
 package io.gravitee.am.management.handlers.management.api.resources;
 
 import io.gravitee.am.identityprovider.api.User;
+import io.gravitee.am.management.handlers.management.api.security.Permission;
+import io.gravitee.am.management.handlers.management.api.security.Permissions;
 import io.gravitee.am.management.service.AuditReporterManager;
 import io.gravitee.am.management.service.IdentityProviderManager;
 import io.gravitee.am.model.Domain;
+import io.gravitee.am.model.Group;
+import io.gravitee.am.model.Membership;
+import io.gravitee.am.model.membership.ReferenceType;
+import io.gravitee.am.model.permissions.RolePermission;
+import io.gravitee.am.model.permissions.RolePermissionAction;
 import io.gravitee.am.service.DomainService;
+import io.gravitee.am.service.GroupService;
+import io.gravitee.am.service.MembershipService;
 import io.gravitee.am.service.ReporterService;
 import io.gravitee.am.service.model.NewDomain;
 import io.gravitee.common.http.MediaType;
@@ -36,6 +45,9 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import java.net.URI;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -59,6 +71,12 @@ public class DomainsResource extends AbstractResource {
     @Autowired
     private ReporterService reporterService;
 
+    @Autowired
+    private MembershipService membershipService;
+
+    @Autowired
+    private GroupService groupService;
+
     @Context
     private ResourceContext resourceContext;
 
@@ -71,7 +89,10 @@ public class DomainsResource extends AbstractResource {
             @ApiResponse(code = 200, message = "List accessible security domains for current user", response = Domain.class, responseContainer = "List"),
             @ApiResponse(code = 500, message = "Internal server error")})
     public void list(@Suspended final AsyncResponse response) {
+        final User authenticatedUser = getAuthenticatedUser();
+
          domainService.findAll()
+                 .map(domains -> filterResources(domains, authenticatedUser))
                  .map(domains ->
                         domains.stream()
                                 .filter(domain -> !domain.isMaster())
@@ -93,6 +114,9 @@ public class DomainsResource extends AbstractResource {
     @ApiResponses({
             @ApiResponse(code = 201, message = "Domain successfully created"),
             @ApiResponse(code = 500, message = "Internal server error")})
+    @Permissions({
+            @Permission(value = RolePermission.MANAGEMENT_DOMAIN, acls = RolePermissionAction.CREATE)
+    })
     public void create(
             @ApiParam(name = "domain", required = true)
             @Valid @NotNull final NewDomain newDomain,
@@ -117,6 +141,26 @@ public class DomainsResource extends AbstractResource {
     @Path("{domain}")
     public DomainResource getDomainResource() {
         return resourceContext.getResource(DomainResource.class);
+    }
+
+    private Set<Domain> filterResources(Set<Domain> domains, User authenticatedUser) {
+        // if user is admin, return all domains
+        if (isAdmin(authenticatedUser)) {
+            return domains;
+        }
+
+        // check if authenticated user is a member of any of the domain list
+        List<Group> groups = groupService.findByMember(authenticatedUser.getId()).blockingGet();
+        List<String> groupIds = (groups != null) ? groups.stream().map(Group::getId).collect(Collectors.toList()) : Collections.emptyList();
+
+        return domains.stream().filter(domain -> {
+            List<Membership> memberships = membershipService.findByReference(domain.getId(), ReferenceType.DOMAIN).blockingGet();
+            if (memberships ==  null || memberships.isEmpty()) {
+                return false;
+            }
+            List<String> membershipIds = memberships.stream().map(Membership::getMemberId).collect(Collectors.toList());
+            return membershipIds.contains(authenticatedUser.getId()) || membershipIds.stream().anyMatch(mId -> groupIds.contains(mId));
+        }).collect(Collectors.toSet());
     }
 
 }

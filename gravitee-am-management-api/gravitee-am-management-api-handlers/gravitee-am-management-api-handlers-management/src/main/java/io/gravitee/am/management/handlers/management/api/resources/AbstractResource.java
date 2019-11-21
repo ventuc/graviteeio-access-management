@@ -15,11 +15,15 @@
  */
 package io.gravitee.am.management.handlers.management.api.resources;
 
+import io.gravitee.am.common.oidc.CustomClaims;
 import io.gravitee.am.identityprovider.api.User;
+import io.gravitee.am.model.permissions.RoleScope;
+import io.gravitee.am.model.permissions.SystemRole;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.SecurityContext;
+import java.util.List;
 
 /**
  * @author David BRASSELY (david.brassely at graviteesource.com)
@@ -27,6 +31,8 @@ import javax.ws.rs.core.SecurityContext;
  * @author GraviteeSource Team
  */
 public abstract class AbstractResource {
+
+    public final static String MANAGEMENT_ADMIN = RoleScope.MANAGEMENT.getId() + ":" + SystemRole.ADMIN.name();
 
     @Context
     protected SecurityContext securityContext;
@@ -40,5 +46,18 @@ public abstract class AbstractResource {
 
     protected boolean isAuthenticated() {
         return securityContext.getUserPrincipal() != null;
+    }
+
+    protected boolean isAdmin(User authenticatedUser) {
+        return isUserInRole(MANAGEMENT_ADMIN, authenticatedUser);
+    }
+
+    private boolean isUserInRole(String role, User authenticatedUser) {
+        if (authenticatedUser == null) {
+            return false;
+        }
+        List<String> roles = (List<String>) authenticatedUser.getAdditionalInformation().get(CustomClaims.ROLES);
+        return roles != null && roles.contains(role);
+
     }
 }

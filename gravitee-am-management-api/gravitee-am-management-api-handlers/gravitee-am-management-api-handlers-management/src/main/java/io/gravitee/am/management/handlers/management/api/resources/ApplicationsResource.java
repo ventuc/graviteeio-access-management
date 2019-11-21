@@ -111,7 +111,7 @@ public class ApplicationsResource extends AbstractResource {
                 .switchIfEmpty(Maybe.error(new DomainNotFoundException(domain)))
                 .flatMapSingle(__ -> applicationService.create(domain, newApplication, authenticatedUser)
                         .map(application -> Response
-                                .created(URI.create("/domains/" + domain + "/applicationss/" + application.getId()))
+                                .created(URI.create("/domains/" + domain + "/applications/" + application.getId()))
                                 .entity(application)
                                 .build())
                 )

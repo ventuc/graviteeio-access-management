@@ -92,4 +92,20 @@ export class DomainService {
   notify(domain): void {
     this.domainUpdatedSource.next(domain);
   }
+
+  members(id): Observable<any> {
+    return this.http.get<any>(this.domainsURL + id + '/members');
+  }
+
+  addMember(id, memberId, memberType, role) {
+    return this.http.post<any>(this.domainsURL + id + '/members', {
+      'memberId': memberId,
+      'memberType': memberType,
+      'role': role
+    });
+  }
+
+  removeMember(id, membershipId) {
+    return this.http.delete<any>(this.domainsURL + id + '/members/' + membershipId);
+  }
 }

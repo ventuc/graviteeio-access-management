@@ -16,7 +16,10 @@
 package io.gravitee.am.management.handlers.management.api.resources;
 
 import io.gravitee.am.identityprovider.api.User;
+import io.gravitee.am.management.handlers.management.api.model.RoleEntity;
 import io.gravitee.am.model.Role;
+import io.gravitee.am.model.permissions.Permission;
+import io.gravitee.am.model.permissions.RoleScope;
 import io.gravitee.am.service.DomainService;
 import io.gravitee.am.service.RoleService;
 import io.gravitee.am.service.exception.DomainNotFoundException;
@@ -38,6 +41,9 @@ import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Titouan COMPIEGNE (titouan.compiegne at graviteesource.com)
@@ -58,7 +64,7 @@ public class RoleResource extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Get a role")
     @ApiResponses({
-            @ApiResponse(code = 200, message = "Role successfully fetched", response = Role.class),
+            @ApiResponse(code = 200, message = "Role successfully fetched", response = RoleEntity.class),
             @ApiResponse(code = 500, message = "Internal server error")})
     public void get(
             @PathParam("domain") String domain,
@@ -72,7 +78,7 @@ public class RoleResource extends AbstractResource {
                     if (!role1.getDomain().equalsIgnoreCase(domain)) {
                         throw new BadRequestException("Role does not belong to domain");
                     }
-                    return Response.ok(role1).build();
+                    return Response.ok(convert(role1)).build();
                 })
                 .subscribe(
                         result -> response.resume(result),
@@ -84,7 +90,7 @@ public class RoleResource extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Update a role")
     @ApiResponses({
-            @ApiResponse(code = 201, message = "Role successfully updated", response = Role.class),
+            @ApiResponse(code = 201, message = "Role successfully updated", response = RoleEntity.class),
             @ApiResponse(code = 500, message = "Internal server error")})
     public void update(
             @PathParam("domain") String domain,
@@ -96,7 +102,7 @@ public class RoleResource extends AbstractResource {
         domainService.findById(domain)
                 .switchIfEmpty(Maybe.error(new DomainNotFoundException(domain)))
                 .flatMapSingle(irrelevant -> roleService.update(domain, role, updateRole, authenticatedUser))
-                .map(role1 -> Response.ok(role1).build())
+                .map(role1 -> Response.ok(convert(role1)).build())
                 .subscribe(
                         result -> response.resume(result),
                         error -> response.resume(error));
@@ -117,5 +123,17 @@ public class RoleResource extends AbstractResource {
                 .subscribe(
                         () -> response.resume(Response.noContent().build()),
                         error -> response.resume(error));
+    }
+
+    private RoleEntity convert(Role role) {
+        RoleEntity roleEntity = new RoleEntity(role);
+        if (role.getScope() != null) {
+            try {
+                Permission[] permissions = Permission.findByScope(RoleScope.valueOf(role.getScope()));
+                List<String> availablePermissions = Arrays.asList(permissions).stream().map(Permission::getMask).sorted().collect(Collectors.toList());
+                roleEntity.setAvailablePermissions(availablePermissions);
+            } catch(Exception ex) { }
+        }
+        return roleEntity;
     }
 }

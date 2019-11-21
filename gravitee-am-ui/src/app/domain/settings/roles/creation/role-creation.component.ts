@@ -27,9 +27,9 @@ import { AppConfig } from "../../../../../config/app.config";
 export class RoleCreationComponent implements OnInit {
   private scopes: any[];
   private domainId: string;
-  private adminContext: boolean;
+  adminContext: boolean;
   role: any = {};
-
+  roleScopes: any[] = ["MANAGEMENT", "DOMAIN", "APPLICATION"];
 
   constructor(private roleService: RoleService, private router: Router, private route: ActivatedRoute,
               private snackbarService : SnackbarService) { }

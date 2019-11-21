@@ -16,6 +16,7 @@
 package io.gravitee.am.management.handlers.admin.authentication;
 
 import io.gravitee.am.common.jwt.Claims;
+import io.gravitee.am.common.oidc.CustomClaims;
 import io.gravitee.am.common.oidc.StandardClaims;
 import io.gravitee.am.identityprovider.api.DefaultUser;
 import io.gravitee.am.identityprovider.api.User;
@@ -36,6 +37,8 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Titouan COMPIEGNE (titouan.compiegne at graviteesource.com)
@@ -99,6 +102,16 @@ public class CustomSavedRequestAwareAuthenticationSuccessHandler extends SavedRe
         ((DefaultUser) principal).setId(endUser.getId());
         principal.getAdditionalInformation().put(StandardClaims.SUB, endUser.getId());
         principal.getAdditionalInformation().put(Claims.domain, endUser.getDomain());
+
+
+        // set role and permissions
+        if (endUser.getRolesPermissions() != null) {
+            List<String> roles = endUser.getRolesPermissions().stream().map(r -> r.getScope() + ":" + r.getName()).collect(Collectors.toList());
+            List<String> permissions =  endUser.getRolesPermissions().stream().flatMap(role -> role.getPermissions().stream()).collect(Collectors.toList());
+            principal.getAdditionalInformation().put(CustomClaims.ROLES, roles);
+            principal.getAdditionalInformation().put(CustomClaims.PERMISSIONS, permissions);
+        }
+
         return jwtGenerator.generateCookie(principal);
     }
 }

@@ -39,6 +39,7 @@ import {DomainSettingsEmailComponent} from "./domain/settings/emails/email/email
 import {DomainSettingsExtensionGrantsComponent} from "./domain/settings/extension-grants/extension-grants.component";
 import {DomainSettingsAccountComponent} from "./domain/settings/account/account.component";
 import {DomainSettingsPoliciesComponent} from "./domain/settings/policies/policies.component";
+import {DomainSettingsMembershipsComponent} from "./domain/settings/memberships/memberships.component";
 import {DomainCreationComponent} from "./settings/domains/creation/domain-creation.component";
 import {ProviderCreationComponent} from "./domain/settings/providers/creation/provider-creation.component";
 import {ProviderComponent} from "./domain/settings/providers/provider/provider.component";
@@ -127,6 +128,9 @@ import {ApplicationAccountSettingsComponent} from "./domain/applications/applica
 import {ApplicationOAuth2Component} from "./domain/applications/application/advanced/oauth2/oauth2.component";
 import {ApplicationCertificatesComponent} from "./domain/applications/application/advanced/certificates/certificates.component";
 import {ApplicationMetadataComponent} from "./domain/applications/application/advanced/metadata/metadata.component";
+import {ManagementRolesComponent} from "./settings/management/roles/roles.component";
+import {ManagementRoleComponent} from "./settings/management/roles/role/role.component";
+import {MembershipsResolver} from "./resolvers/memberships.resolver";
 
 const routes: Routes = [
   { path: 'dashboard',
@@ -285,27 +289,6 @@ const routes: Routes = [
               audit: AuditResolver
             }
           },
-          { path: 'scopes',
-            component: DomainSettingsScopesComponent,
-            resolve: {
-              scopes: ScopesResolver
-            },
-            data: {
-              menu: {
-                label: 'Scopes',
-                section: 'Security'
-              }
-            }
-          },
-          { path: 'scopes/new',
-            component: ScopeCreationComponent
-          },
-          { path: 'scopes/:scopeId',
-            component: ScopeComponent,
-            resolve: {
-              scope: ScopeResolver
-            }
-          },
           { path: 'users', component: UsersComponent,
             resolve: {
               users: UsersResolver
@@ -331,7 +314,34 @@ const routes: Routes = [
               { path: 'roles', component: UserRolesComponent, resolve: { roles : UserRolesResolver}}
             ]
           },
-          { path: 'roles', component: DomainSettingsRolesComponent,
+          { path: 'groups', component: GroupsComponent,
+            resolve: {
+              groups: GroupsResolver
+            },
+            data: {
+              menu: {
+                label: 'Groups',
+                section: 'User Management'
+              }
+            }
+          },
+          { path: 'groups/new',
+            component: GroupCreationComponent
+          },
+          {
+            path: 'groups/:groupId',
+            component: GroupComponent,
+            resolve: {
+              group: GroupResolver
+            },
+            children: [
+              { path: '', redirectTo: 'settings', pathMatch: 'full' },
+              { path: 'settings', component: GroupSettingsComponent },
+              { path: 'members', component: GroupMembersComponent, resolve: { members : GroupMembersResolver}},
+              { path: 'roles', component: GroupRolesComponent, resolve: { roles : GroupRolesResolver}}
+            ]
+          },
+          { path: 'roles', component: ManagementRolesComponent,
             resolve: {
               roles: RolesResolver
             },
@@ -343,17 +353,13 @@ const routes: Routes = [
             }
           },
           { path: 'roles/new',
-            component: RoleCreationComponent,
-            resolve: {
-              scopes: ScopesResolver
-            }
+            component: RoleCreationComponent
           },
           {
             path: 'roles/:roleId',
-            component: RoleComponent,
+            component: ManagementRoleComponent,
             resolve: {
-              role: RoleResolver,
-              scopes: ScopesResolver
+              role: RoleResolver
             }
           },
           { path: 'tags', component: TagsComponent,
@@ -523,6 +529,18 @@ const routes: Routes = [
             data: {
               menu: {
                 label: 'General',
+                section: 'Settings'
+              }
+            }
+          },
+          { path: 'members',
+            component: DomainSettingsMembershipsComponent,
+            resolve: {
+              members: MembershipsResolver
+            },
+            data: {
+              menu: {
+                label: 'User and group access',
                 section: 'Settings'
               }
             }

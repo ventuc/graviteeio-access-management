@@ -21,6 +21,8 @@ import { AppConfig } from "../../config/app.config";
 @Injectable()
 export class PlatformService {
   private platformURL = AppConfig.settings.baseURL + '/platform/';
+  private domainsURL = AppConfig.settings.baseURL + '/domains/';
+  private adminDomain = AppConfig.settings.authentication.domainId;
 
   constructor(private http: HttpClient) { }
 
@@ -66,5 +68,17 @@ export class PlatformService {
 
   policySchema(id): Observable<any> {
     return this.http.get<any>(this.platformURL + 'plugins/policies/' + id + '/schema');
+  }
+
+  searchUsers(searchTerm, page, size): Observable<any> {
+    return this.http.get<any>(this.domainsURL + this.adminDomain + "/users?q=" + searchTerm + "&page=" + page + "&size=" + size);
+  }
+
+  roles(scope): Observable<any> {
+    return this.http.get<any>(this.domainsURL + this.adminDomain + "/roles?scope=" + scope);
+  }
+
+  groups(): Observable<any> {
+    return this.http.get<any>(this.domainsURL + this.adminDomain + "/groups");
   }
 }
